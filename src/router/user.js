@@ -31,7 +31,6 @@ router.post('/user', async (req, res) => {
     try { 
         await user.save()
         const token = await user.generateAuthToken()
-        console.log(token)
         sendWelComeEmail(user.email, user.name)
         res.send({user: user.getPublicData(), token})
     } catch (error) {
@@ -64,16 +63,13 @@ router.get('/auth/users/me', auth, async (req, res) => {
 
 router.post('/users/login', async (req, res) => {
     try {
-        console.log('Login.........')
-        console.log(req.body)
+    
         const user = await User.verifyCredential(req.body.email, req.body.password)
-        console.log('user......'+user)
         const token = await user.generateAuthToken()
-        console.log('token......'+token)
         res.send({user: user.getPublicData(), token})
         
     } catch (error) {
-        res.send({error: error})
+        res.status(400).send(error)
     }
 })
 
@@ -115,7 +111,7 @@ router.get('/user/:id', async (req, res) => {
 
 router.patch('/user/me', auth, async (req, res) => {
     const updates = Object.keys(req.body)
-    console.log(updates)
+
     const allowUpdate = ['name', 'email', 'age', 'password']
     const isValidKeyToUpdate = updates.every((update) => allowUpdate.includes(update))
 
@@ -124,16 +120,14 @@ router.patch('/user/me', auth, async (req, res) => {
     }
 
     try {
-        //const user = await User.findByIdAndUpdate(_id, req.body, { new: true, runValidators: true })
-
-        // if (!user) {
-        //     return res.status(400).send("Not Found")
-        // }
         updates.forEach((update) => req.user[update] = req.body[update])
-        await req.user.save()
-        res.send(req.user)
+        await req.user.save().then(() =>{
+            res.send(req.user)
+        }).catch((error) =>{
+            throw Error('Unable to Save')
+        })
     } catch (error) {
-        res.status(400).send('Update fail', error)
+        res.status(400)
     }
 })
 
@@ -147,9 +141,7 @@ router.post('/user/me/avatar', auth, upload.single('avatar'), async (req, res) =
     await req.user.save()
     res.send('File uploaded')
 }, (error, req, res, next) => {
-    res.status(400).send({
-        error: error.message
-    })
+    res.status(400)
 })
 
 router.get('/user/:id/avatar', async (req, res) => {
@@ -157,27 +149,27 @@ router.get('/user/:id/avatar', async (req, res) => {
     try {
         const user = await User.findById(_id)
         if (!user|| !user.avatar) {
-            return res.sendStatus(404).send("Not Found")
+            return res.status(404).send("Not Found")
         }
         res.set('Content-type', 'image/png')
+        res.send(user.avatar)
+    } catch (error) {
+        res.status(500)
+    }
+})
+
+router.get('/user/me/avatar', auth, (req, res) => {
+    const user = req.user
+    try {
+        if (!user|| !user.avatar) {
+            return res.sendStatus(404).send("Not Found")
+        }
+        res.set('Content-type', 'image/jpg')
         res.send(user.avatar)
     } catch (error) {
         res.sendStatus(500).send(error)
     }
 })
-
-// router.get('/user/me/avatar', auth, (req, res) => {
-//     const user = req.user
-//     try {
-//         if (!user|| !user.avatar) {
-//             return res.sendStatus(404).send("Not Found")
-//         }
-//         res.set('Content-type', 'image/jpg')
-//         res.send(user.avatar)
-//     } catch (error) {
-//         res.sendStatus(500).send(error)
-//     }
-// })
 
 router.delete('/user/me/avatar', auth , async(req, res) =>  {
     const user =  req.user
@@ -196,9 +188,9 @@ router.delete('/user', auth, async (req, res) => {
     try {
         const user = await req.user.remove()
         sendGoodByeEmail(user.email, user.name)
-        res.send(user)
+        res.send({user})
     } catch (error) {
-        res.sendStatus(500).send(error)
+        res.status(500).send(error)
     }
 
     // User.findById(req.params.id).then((data) => {

@@ -94,9 +94,8 @@ userSchema.methods.getPublicData = function() {
 
 
 userSchema.statics.verifyCredential = async (email, password) => {
-    console.log('Email ')
-    console.log('Password  ',password)
     const user = await User.findOne({ email })
+
     if(!user) {
         throw new Error('Invalid..')
     }

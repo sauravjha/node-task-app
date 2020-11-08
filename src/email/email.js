@@ -13,12 +13,7 @@ const sendWelComeEmail = (email, name) => {
             text: `Welcome to ${name} task App`,
             html: '<strong>and easy to do anywhere, even with Node.js</strong>',
           }
-    ).then(() => {
-        console.log('Email sent')
-      })
-      .catch((error) => {
-        console.error(error)
-      })
+    )
 }
 
 const sendGoodByeEmail = (email, name) => {
@@ -30,12 +25,7 @@ const sendGoodByeEmail = (email, name) => {
             text: `Goodbuy to ${name} task App`,
             html: `<strong>Sorry to see you gone ${name}</strong>`,
           }
-    ).then(() => {
-        console.log('Email sent')
-      })
-      .catch((error) => {
-        console.error(error)
-      })
+    )
 }
 
 module.exports = {
